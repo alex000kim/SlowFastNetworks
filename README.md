@@ -15,7 +15,7 @@ unrar x UCF101.rar $DATA_DIR
 ```
 ### Split into train/validation
 ```bash
-export N_valid=30 # number of videos in validatation set per class
+export N_valid=30 # number of videos in the validatation set per class
 mv $DATA_DIR/UCF-101/ $DATA_DIR/train
 mkdir $DATA_DIR/validation
 for dir in $(ls $DATA_DIR/train); do mkdir $DATA_DIR/validation/$dir; shuf -zn$N_valid -e $DATA_DIR/train/$dir/*.avi | xargs -0 -I{} mv -v {} $DATA_DIR/validation/$dir; done
