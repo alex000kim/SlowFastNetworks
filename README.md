@@ -5,7 +5,6 @@ PyTorch implementation of ["SlowFast Networks for Video Recognition"](https://ar
 ### Environment
 ```bash
 conda env create -f environment.yml
-conda activate slowfastnet
 ```
 ### Download UCF 101
 ```bash
@@ -34,6 +33,12 @@ After running the last command, the dataset will be organized in the following w
 ```
 
 2. Modify the params in config.py (i.e. set `params['dataset']` to `<YOUR_DATA_DIR>` )
+
+## Train model
+```bash
+conda activate slowfastnet
+python train.py
+```
 
 ## Code Reference:
 
