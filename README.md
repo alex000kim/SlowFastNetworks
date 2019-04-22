@@ -37,6 +37,9 @@ dataset(e.g. UCF-101)
 2. Modify the params in config.py (i.e. set `params['dataset']` to `<YOUR_DATA_DIR>` )
 
 ## Code Reference:
+
 [1] https://github.com/Guocode/SlowFast-Networks/
+
 [2] https://github.com/jfzhang95/pytorch-video-recognition
+
 [3] https://github.com/irhumshafkat/R2Plus1D-PyTorch
