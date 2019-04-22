@@ -20,10 +20,9 @@ mv $DATA_DIR/UCF-101/ $DATA_DIR/train
 mkdir $DATA_DIR/validation
 for dir in $(ls $DATA_DIR/train); do mkdir $DATA_DIR/validation/$dir; shuf -zn$N_valid -e $DATA_DIR/train/$dir/*.avi | xargs -0 -I{} mv -v {} $DATA_DIR/validation/$dir; done
 ```
-## Train
-1. Dataset should be orgnized as：
+After running the last command, the dataset will be organized in the following way
 ```
-dataset(e.g. UCF-101)
+<YOUR_DATA_DIR>
 │    │ train
 │    │    │ ApplyEyeMakeup
 │    │    │ ApplyLipstick
