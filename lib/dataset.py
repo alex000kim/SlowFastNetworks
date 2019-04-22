@@ -7,9 +7,8 @@ from torch.utils.data import DataLoader, Dataset
 
 
 class VideoDataset(Dataset):
-
     def __init__(self, directory, mode='train', clip_len=8, frame_sample_rate=1):
-        folder = Path(directory)/mode  # get the directory of the specified split
+        folder = Path(directory) / mode  # get the directory of the specified split
         self.clip_len = clip_len
 
         self.short_side = [128, 160]
@@ -17,18 +16,17 @@ class VideoDataset(Dataset):
         self.frame_sample_rate = frame_sample_rate
         self.mode = mode
 
-
         self.fnames, labels = [], []
         for label in sorted(os.listdir(folder)):
             for fname in os.listdir(os.path.join(folder, label)):
                 self.fnames.append(os.path.join(folder, label, fname))
                 labels.append(label)
         # prepare a mapping between the label names (strings) and indices (ints)
-        self.label2index = {label:index for index, label in enumerate(sorted(set(labels)))} 
+        self.label2index = {label: index for index, label in enumerate(sorted(set(labels)))}
         # convert the list of label names into an array of label indices
         self.label_array = np.array([self.label2index[label] for label in labels], dtype=int)
 
-        label_file = str(len(os.listdir(folder)))+'class_labels.txt'
+        label_file = str(len(os.listdir(folder))) + 'class_labels.txt'
         with open(label_file, 'w') as f:
             for id, label in enumerate(sorted(self.label2index)):
                 f.writelines(str(id + 1) + ' ' + label + '\n')
@@ -37,11 +35,11 @@ class VideoDataset(Dataset):
         # loading and preprocessing. TODO move them to transform classes
         buffer = self.loadvideo(self.fnames[index])
 
-        while buffer.shape[0]<self.clip_len+2 :
+        while buffer.shape[0] < self.clip_len + 2:
             index = np.random.randint(self.__len__())
             buffer = self.loadvideo(self.fnames[index])
 
-        if self.mode == 'train' or self.mode == 'training':
+        if self.mode == 'train':
             buffer = self.randomflip(buffer)
         buffer = self.crop(buffer, self.clip_len, self.crop_size)
         buffer = self.normalize(buffer)
@@ -71,9 +69,9 @@ class VideoDataset(Dataset):
 
         # create a buffer. Must have dtype float, so it gets converted to a FloatTensor by Pytorch later
         start_idx = 0
-        end_idx = frame_count-1
+        end_idx = frame_count - 1
         frame_count_sample = frame_count // self.frame_sample_rate - 1
-        if frame_count>300:
+        if frame_count > 300:
             end_idx = np.random.randint(300, frame_count)
             start_idx = end_idx - 300
             frame_count_sample = 301 // self.frame_sample_rate - 1
@@ -89,9 +87,9 @@ class VideoDataset(Dataset):
             if count < start_idx:
                 count += 1
                 continue
-            if retaining is False or count>end_idx:
+            if retaining is False or count > end_idx:
                 break
-            if count%self.frame_sample_rate == remainder and sample_count < frame_count_sample:
+            if count % self.frame_sample_rate == remainder and sample_count < frame_count_sample:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 # will resize frames if not already final size
 
@@ -102,7 +100,7 @@ class VideoDataset(Dataset):
             count += 1
         capture.release()
         return buffer
-    
+
     def crop(self, buffer, clip_len, crop_size):
         # randomly select time index for temporal jittering
         time_index = np.random.randint(buffer.shape[0] - clip_len)
@@ -117,13 +115,13 @@ class VideoDataset(Dataset):
                  height_index:height_index + crop_size,
                  width_index:width_index + crop_size, :]
 
-        return buffer                
+        return buffer
 
     def normalize(self, buffer):
         # Normalize the buffer
         # buffer = (buffer - 128)/128.0
         for i, frame in enumerate(buffer):
-            frame = (frame - np.array([[[128.0, 128.0, 128.0]]]))/128.0
+            frame = (frame - np.array([[[128.0, 128.0, 128.0]]])) / 128.0
             buffer[i] = frame
         return buffer
 
@@ -143,6 +141,6 @@ if __name__ == '__main__':
 
     datapath = '/disk/data/UCF-101'
     train_dataloader = \
-        DataLoader( VideoDataset(datapath, mode='train'), batch_size=10, shuffle=True, num_workers=0)
+        DataLoader(VideoDataset(datapath, mode='train'), batch_size=10, shuffle=True, num_workers=0)
     for step, (buffer, label) in enumerate(train_dataloader):
         print("label: ", label)

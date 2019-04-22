@@ -1,18 +1,15 @@
 params = dict()
-
 params['num_classes'] = 101
-
-params['dataset'] = '/disk/dataset/UCF-101'
-
+params['dataset'] = '/home/akim/datasets/UCF-101'
 params['epoch_num'] = 40
 params['batch_size'] = 16
 params['step'] = 10
-params['num_workers'] = 4
-params['learning_rate'] = 1e-2
+params['num_workers'] = 8
+params['learning_rate'] = 3e-3
 params['momentum'] = 0.9
 params['weight_decay'] = 1e-5
 params['display'] = 10
-params['pretrained'] = None
+params['pretrained'] = 'UCF101/2019-04-21-09-42-18/clip_len_64frame_sample_rate_1_checkpoint_13.pth.tar'
 params['gpu'] = [0]
 params['log'] = 'log'
 params['save_path'] = 'UCF101'

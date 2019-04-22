@@ -1,17 +1,19 @@
 import os
 import time
-import numpy as np
+
 import torch
-from config import params
+from tensorboardX import SummaryWriter
 from torch import nn, optim
 from torch.utils.data import DataLoader
-import torch.backends.cudnn as cudnn
-from lib.dataset import VideoDataset
+
+from config import params
 from lib import slowfastnet
-from tensorboardX import SummaryWriter
+from lib.dataset import VideoDataset
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+
     def __init__(self):
         self.reset()
 
@@ -27,6 +29,7 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
+
 def accuracy(output, target, topk=(1,)):
     """Computes the precision@k for the specified values of k"""
     maxk = max(topk)
@@ -41,6 +44,7 @@ def accuracy(output, target, topk=(1,)):
         correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
+
 
 def train(model, train_dataloader, epoch, criterion, optimizer, writer):
     batch_time = AverageMeter()
@@ -70,11 +74,11 @@ def train(model, train_dataloader, epoch, criterion, optimizer, writer):
         optimizer.step()
         batch_time.update(time.time() - end)
         end = time.time()
-        if (step+1) % params['display'] == 0:
+        if (step + 1) % params['display'] == 0:
             print('-------------------------------------------------------')
             for param in optimizer.param_groups:
                 print('lr: ', param['lr'])
-            print_string = 'Epoch: [{0}][{1}/{2}]'.format(epoch, step+1, len(train_dataloader))
+            print_string = 'Epoch: [{0}][{1}/{2}]'.format(epoch, step + 1, len(train_dataloader))
             print(print_string)
             print_string = 'data_time: {data_time:.3f}, batch time: {batch_time:.3f}'.format(
                 data_time=data_time.val,
@@ -89,6 +93,7 @@ def train(model, train_dataloader, epoch, criterion, optimizer, writer):
     writer.add_scalar('train_loss_epoch', losses.avg, epoch)
     writer.add_scalar('train_top1_acc_epoch', top1.avg, epoch)
     writer.add_scalar('train_top5_acc_epoch', top5.avg, epoch)
+
 
 def validation(model, val_dataloader, epoch, criterion, optimizer, writer):
     batch_time = AverageMeter()
@@ -135,7 +140,7 @@ def validation(model, val_dataloader, epoch, criterion, optimizer, writer):
 
 
 def main():
-    cudnn.benchmark = False
+    torch.backends.cudnn.benchmark = True
     cur_time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
     logdir = os.path.join(params['log'], cur_time)
     if not os.path.exists(logdir):
@@ -146,17 +151,19 @@ def main():
     print("Loading dataset")
     train_dataloader = \
         DataLoader(
-            VideoDataset(params['dataset'], mode='train', clip_len=params['clip_len'], frame_sample_rate=params['frame_sample_rate']),
+            VideoDataset(params['dataset'], mode='train', clip_len=params['clip_len'],
+                         frame_sample_rate=params['frame_sample_rate']),
             batch_size=params['batch_size'], shuffle=True, num_workers=params['num_workers'])
 
     val_dataloader = \
         DataLoader(
-            VideoDataset(params['dataset'], mode='validation', clip_len=params['clip_len'], frame_sample_rate=params['frame_sample_rate']),
+            VideoDataset(params['dataset'], mode='validation', clip_len=params['clip_len'],
+                         frame_sample_rate=params['frame_sample_rate']),
             batch_size=params['batch_size'], shuffle=False, num_workers=params['num_workers'])
 
     print("load model")
     model = slowfastnet.resnet50(class_num=params['num_classes'])
-    
+
     if params['pretrained'] is not None:
         pretrained_dict = torch.load(params['pretrained'], map_location='cpu')
         try:
@@ -167,12 +174,13 @@ def main():
         print("load pretrain model")
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
-    
+
     model = model.cuda(params['gpu'][0])
     model = nn.DataParallel(model, device_ids=params['gpu'])  # multi-Gpu
 
     criterion = nn.CrossEntropyLoss().cuda()
-    optimizer = optim.SGD(model.parameters(), lr=params['learning_rate'], momentum=params['momentum'], weight_decay=params['weight_decay'])
+    optimizer = optim.SGD(model.parameters(), lr=params['learning_rate'], momentum=params['momentum'],
+                          weight_decay=params['weight_decay'])
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=params['step'], gamma=0.1)
 
     model_save_dir = os.path.join(params['save_path'], cur_time)
@@ -180,15 +188,17 @@ def main():
         os.makedirs(model_save_dir)
     for epoch in range(params['epoch_num']):
         train(model, train_dataloader, epoch, criterion, optimizer, writer)
-        if epoch % 2== 0:
+        if epoch % 2 == 0:
             validation(model, val_dataloader, epoch, criterion, optimizer, writer)
         scheduler.step()
         if epoch % 1 == 0:
             checkpoint = os.path.join(model_save_dir,
-                                      "clip_len_" + str(params['clip_len']) + "frame_sample_rate_" +str(params['frame_sample_rate'])+ "_checkpoint_" + str(epoch) + ".pth.tar")
+                                      "clip_len_" + str(params['clip_len']) + "frame_sample_rate_" + str(
+                                          params['frame_sample_rate']) + "_checkpoint_" + str(epoch) + ".pth.tar")
             torch.save(model.module.state_dict(), checkpoint)
 
     writer.close
+
 
 if __name__ == '__main__':
     main()
